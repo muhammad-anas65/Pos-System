@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogoIcon, ShoppingCartIcon, BoxIcon, UsersIcon, Cog8ToothIcon, ArrowRightOnRectangleIcon, DocumentTextIcon } from './icons';
+import { LogoIcon, ShoppingCartIcon, BoxIcon, UsersIcon, Cog8ToothIcon, ArrowRightOnRectangleIcon, DocumentTextIcon, BrainIcon } from './icons';
 import { View, Currency, User } from '../types';
 import { CURRENCIES } from '../constants';
 
@@ -72,6 +72,13 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, currentView, onCurrencyChan
                 aria-label="FBR Settings"
             >
                 <DocumentTextIcon className="h-6 w-6 text-gray-600 dark:text-gray-300"/>
+            </button>
+            <button 
+                onClick={() => onNavigate('ai')}
+                className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${currentView === 'ai' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                aria-label="AI Insights"
+            >
+                <BrainIcon className="h-6 w-6 text-gray-600 dark:text-gray-300"/>
             </button>
           </>
         )}

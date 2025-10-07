@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Product, CartItem, Category, View, Customer, HeldOrder, PaymentMethod, CompletedOrder, Currency, User, LoyaltySettings, FbrSettings } from './types';
+import { Product, CartItem, Category, View, Customer, HeldOrder, PaymentMethod, CompletedOrder, Currency, User, LoyaltySettings, FbrSettings, AISettings } from './types';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES, INITIAL_TAX_RATE, INITIAL_CUSTOMERS, DEFAULT_CURRENCY, CURRENCIES, INITIAL_USERS } from './constants';
 import Header from './components/Header';
 import ProductGrid from './components/ProductGrid';
@@ -12,6 +12,7 @@ import ReceiptModal from './components/ReceiptModal';
 import Login from './components/Login';
 import CustomerProfileModal from './components/CustomerProfileModal';
 import FBRSettings from './components/FBRSettings';
+import AIInsights from './components/AIInsights';
 import { sendInvoiceToFBR } from './utils/fbrApi';
 
 const App: React.FC = () => {
@@ -52,6 +53,8 @@ const App: React.FC = () => {
     manualTaxRate: INITIAL_TAX_RATE,
   });
   const [fbrApiStatus, setFbrApiStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [aiSettings, setAiSettings] = useState<AISettings>({ enabled: false });
+
 
   // --- FBR Tax Rate Simulation ---
   useEffect(() => {
@@ -93,7 +96,7 @@ const App: React.FC = () => {
 
   const navigate = (view: View) => {
     // Role-based access control
-    if (currentUser?.role !== 'Admin' && (view === 'products' || view === 'customers' || view === 'users' || view === 'fbr')) {
+    if (currentUser?.role !== 'Admin' && (view === 'products' || view === 'customers' || view === 'users' || view === 'fbr' || view === 'ai')) {
       return; // Block navigation for non-admins
     }
     setCurrentView(view);
@@ -505,6 +508,15 @@ const App: React.FC = () => {
                     settings={fbrSettings}
                     onSettingsChange={setFbrSettings}
                     apiStatus={fbrApiStatus}
+                />
+            );
+        case 'ai':
+            return (
+                <AIInsights
+                  settings={aiSettings}
+                  onSettingsChange={setAiSettings}
+                  completedOrders={allCompletedOrders}
+                  products={products}
                 />
             );
         default:

@@ -54,8 +54,12 @@ export interface FbrSettings {
   manualTaxRate: number;
 }
 
+export interface AISettings {
+  enabled: boolean;
+}
+
 export type Category = 'All' | 'Coffee' | 'Tea' | 'Pastries' | 'Sandwiches';
-export type View = 'sales' | 'products' | 'customers' | 'users' | 'fbr';
+export type View = 'sales' | 'products' | 'customers' | 'users' | 'fbr' | 'ai';
 export type PaymentMethod = 'Card' | 'Cash';
 export type UserRole = 'Admin' | 'Cashier' | 'Salesman';
 
