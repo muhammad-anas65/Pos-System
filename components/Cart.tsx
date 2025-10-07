@@ -224,7 +224,7 @@ const Cart: React.FC<CartProps> = ({
             <div className="flex justify-between text-green-600 dark:text-green-400">
                 <span>
                     {loyaltyDiscountApplied ? 'Loyalty Discount' : 'Discount'}{' '}
-                    <span className="text-xs font-normal">
+                    <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">
                       ({discount.type === 'percentage'
                         ? `${discount.value}%`
                         : formatCurrency(discount.value, currency)})

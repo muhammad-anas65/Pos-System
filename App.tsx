@@ -207,6 +207,8 @@ const App: React.FC = () => {
         customer: selectedCustomer,
         subtotal,
         discountAmount,
+        discount: discount || undefined,
+        loyaltyDiscountApplied,
         tax,
         total,
         paymentMethod,

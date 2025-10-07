@@ -64,6 +64,8 @@ export interface CompletedOrder {
   customer: Customer | null;
   subtotal: number;
   discountAmount?: number;
+  discount?: { type: 'percentage' | 'fixed'; value: number };
+  loyaltyDiscountApplied?: boolean;
   tax: number;
   total: number;
   paymentMethod: PaymentMethod;

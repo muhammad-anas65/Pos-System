@@ -58,7 +58,16 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, order }) =
             </div>
              {order.discountAmount && order.discountAmount > 0 && (
                 <div className="flex justify-between">
-                    <span>Discount</span>
+                    <span>
+                        {order.loyaltyDiscountApplied ? 'Loyalty Discount' : 'Discount'}
+                        {order.discount && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                                ({order.discount.type === 'percentage'
+                                    ? `${order.discount.value}%`
+                                    : formatCurrency(order.discount.value, order.currency)})
+                            </span>
+                        )}
+                    </span>
                     <span>-{formatCurrency(order.discountAmount, order.currency)}</span>
                 </div>
             )}
