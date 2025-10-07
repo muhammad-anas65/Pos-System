@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { Product, CartItem, Category, View, Customer, HeldOrder, PaymentMethod, CompletedOrder, Currency, User } from './types';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { Product, CartItem, Category, View, Customer, HeldOrder, PaymentMethod, CompletedOrder, Currency, User, LoyaltySettings, FbrSettings } from './types';
 import { INITIAL_PRODUCTS, CATEGORIES, INITIAL_TAX_RATE, INITIAL_CUSTOMERS, DEFAULT_CURRENCY, CURRENCIES, INITIAL_USERS } from './constants';
 import Header from './components/Header';
 import ProductGrid from './components/ProductGrid';
@@ -10,6 +10,9 @@ import CustomerManagement from './components/CustomerManagement';
 import UserManagement from './components/UserManagement';
 import ReceiptModal from './components/ReceiptModal';
 import Login from './components/Login';
+import CustomerProfileModal from './components/CustomerProfileModal';
+import FBRSettings from './components/FBRSettings';
+import { sendInvoiceToFBR } from './utils/fbrApi';
 
 const App: React.FC = () => {
   // Authentication State
@@ -28,9 +31,48 @@ const App: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(customers[0]);
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
   const [isReceiptModalOpen, setReceiptModalOpen] = useState(false);
-  const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
+  const [currentCompletedOrder, setCurrentCompletedOrder] = useState<CompletedOrder | null>(null);
+  const [allCompletedOrders, setAllCompletedOrders] = useState<CompletedOrder[]>([]);
   const [currentCurrency, setCurrentCurrency] = useState<Currency>(DEFAULT_CURRENCY);
   const [taxRate, setTaxRate] = useState(INITIAL_TAX_RATE);
+  const [discount, setDiscount] = useState<{ type: 'percentage' | 'fixed'; value: number } | null>(null);
+  const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings>({
+    enabled: true,
+    spendThreshold: 50000,
+    rewardPercentage: 10,
+  });
+  const [loyaltyDiscountApplied, setLoyaltyDiscountApplied] = useState(false);
+  const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
+  const [fbrSettings, setFbrSettings] = useState<FbrSettings>({
+    enabled: false,
+    apiKey: '',
+    ntn: '',
+    posId: '',
+    manualTaxRate: INITIAL_TAX_RATE,
+  });
+  const [fbrApiStatus, setFbrApiStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  // --- FBR Tax Rate Simulation ---
+  useEffect(() => {
+    if (fbrSettings.enabled) {
+        setFbrApiStatus('loading');
+        // Simulate API call to fetch tax rate from FBR
+        const timeout = setTimeout(() => {
+            // In a real app, you'd fetch this. We'll use a hardcoded 17% for the demo.
+            const fbrRate = 0.17; 
+            setTaxRate(fbrRate);
+            setFbrApiStatus('success');
+            console.log('Successfully fetched FBR tax rate:', fbrRate);
+        }, 1000);
+
+        return () => clearTimeout(timeout);
+    } else {
+        // If FBR integration is disabled, use the manual rate from FBR settings
+        setTaxRate(fbrSettings.manualTaxRate);
+        setFbrApiStatus('idle');
+    }
+  }, [fbrSettings]);
+
 
   // --- Handlers ---
   
@@ -50,7 +92,7 @@ const App: React.FC = () => {
 
   const navigate = (view: View) => {
     // Role-based access control
-    if (currentUser?.role !== 'Admin' && (view === 'products' || view === 'customers' || view === 'users')) {
+    if (currentUser?.role !== 'Admin' && (view === 'products' || view === 'customers' || view === 'users' || view === 'fbr')) {
       return; // Block navigation for non-admins
     }
     setCurrentView(view);
@@ -89,14 +131,48 @@ const App: React.FC = () => {
     });
   }, [products]);
 
+  const handleApplyDiscount = useCallback((type: 'percentage' | 'fixed', value: number) => {
+    if (value > 0) {
+        setDiscount({ type, value });
+    } else {
+        setDiscount(null);
+    }
+  }, []);
+
+  const handleRemoveDiscount = useCallback(() => {
+    setDiscount(null);
+    setLoyaltyDiscountApplied(false);
+  }, []);
+
   const clearCart = useCallback(() => {
     setCart([]);
     setSelectedCustomer(customers[0]);
-  }, [customers]);
+    handleRemoveDiscount();
+  }, [customers, handleRemoveDiscount]);
 
   const subtotal = useMemo(() => cart.reduce((acc, item) => acc + item.price * item.quantity, 0), [cart]);
-  const tax = useMemo(() => subtotal * taxRate, [subtotal, taxRate]);
-  const total = useMemo(() => subtotal + tax, [subtotal, tax]);
+  
+  const discountAmount = useMemo(() => {
+    if (!discount || subtotal === 0) return 0;
+    if (discount.type === 'percentage') {
+        const calculatedDiscount = subtotal * (discount.value / 100);
+        return Math.min(calculatedDiscount, subtotal);
+    }
+    if (discount.type === 'fixed') {
+        return Math.min(discount.value, subtotal);
+    }
+    return 0;
+  }, [subtotal, discount]);
+  
+  const tax = useMemo(() => (subtotal - discountAmount) * taxRate, [subtotal, discountAmount, taxRate]);
+  const total = useMemo(() => subtotal - discountAmount + tax, [subtotal, discountAmount, tax]);
+  
+  const handleApplyLoyaltyDiscount = useCallback(() => {
+    if (selectedCustomer?.rewardAvailable && discountAmount === 0) {
+      handleApplyDiscount('percentage', loyaltySettings.rewardPercentage);
+      setLoyaltyDiscountApplied(true);
+    }
+  }, [selectedCustomer, discountAmount, loyaltySettings.rewardPercentage, handleApplyDiscount]);
 
   const filteredProducts = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase();
@@ -123,32 +199,68 @@ const App: React.FC = () => {
         }
     });
     setProducts(newProducts);
+
+    const isFbr = fbrSettings.enabled && fbrApiStatus === 'success';
     
     const orderData: CompletedOrder = {
         cartItems: cart,
         customer: selectedCustomer,
         subtotal,
+        discountAmount,
         tax,
         total,
         paymentMethod,
         date: new Date(),
         currency: currentCurrency,
         taxRate: taxRate,
+        isFbrInvoice: isFbr,
+        fbrInvoiceNumber: isFbr ? `FBR-${Date.now()}` : undefined,
     };
 
     if (paymentMethod === 'Cash' && amountTendered) {
         orderData.amountTendered = amountTendered;
         orderData.change = amountTendered - total;
     }
+    
+    if (selectedCustomer && selectedCustomer.id !== 1) { // Not for walk-in
+      const customerIndex = customers.findIndex(c => c.id === selectedCustomer.id);
+      if (customerIndex !== -1) {
+          const updatedCustomers = [...customers];
+          const customerToUpdate = { ...updatedCustomers[customerIndex] };
+          
+          const currentSpent = customerToUpdate.totalSpent || 0;
 
-    setCompletedOrder(orderData);
+          if (loyaltyDiscountApplied) {
+              customerToUpdate.rewardAvailable = false;
+              // Reset spending progress after using a reward to require earning it again
+              customerToUpdate.totalSpent = 0; 
+          } else {
+              customerToUpdate.totalSpent = currentSpent + total;
+              // Check if they earned a new reward for the future
+              if (loyaltySettings.enabled && !customerToUpdate.rewardAvailable && customerToUpdate.totalSpent >= loyaltySettings.spendThreshold) {
+                  customerToUpdate.rewardAvailable = true;
+              }
+          }
+          
+          updatedCustomers[customerIndex] = customerToUpdate;
+          setCustomers(updatedCustomers);
+      }
+    }
+
+    if (orderData.isFbrInvoice) {
+      sendInvoiceToFBR(orderData, fbrSettings);
+    }
+
+    setCurrentCompletedOrder(orderData);
+    setAllCompletedOrders(prev => [...prev, orderData]);
     setPaymentModalOpen(false);
     setReceiptModalOpen(true);
+    setLoyaltyDiscountApplied(false);
   };
   
   const handleCloseReceipt = () => {
     setReceiptModalOpen(false);
-    setCompletedOrder(null);
+    setCurrentCompletedOrder(null);
     clearCart();
   };
 
@@ -200,7 +312,7 @@ const App: React.FC = () => {
   const handleAddCustomer = (newCustomerData: Omit<Customer, 'id'>) => {
     setCustomers(prev => {
         const newId = prev.length > 0 ? Math.max(...prev.map(c => c.id)) + 1 : 1;
-        const newCustomer = { ...newCustomerData, id: newId };
+        const newCustomer = { ...newCustomerData, id: newId, totalSpent: 0, rewardAvailable: false };
         return [...prev, newCustomer];
     });
   };
@@ -244,6 +356,15 @@ const App: React.FC = () => {
     }
     setUsers(prev => prev.filter(u => u.id !== userId));
   };
+
+  const handleViewCustomerProfile = (customer: Customer) => {
+    setViewingCustomer(customer);
+  };
+
+  const handleCloseCustomerProfile = () => {
+    setViewingCustomer(null);
+  };
+
 
   // --- Render Logic ---
 
@@ -293,6 +414,10 @@ const App: React.FC = () => {
                       onUpdateQuantity={updateQuantity}
                       onClearCart={clearCart}
                       subtotal={subtotal}
+                      discountAmount={discountAmount}
+                      discount={discount}
+                      onApplyDiscount={handleApplyDiscount}
+                      onRemoveDiscount={handleRemoveDiscount}
                       tax={tax}
                       total={total}
                       onCheckout={handleCheckout}
@@ -305,6 +430,9 @@ const App: React.FC = () => {
                       onDeleteHeldOrder={handleDeleteHeldOrder}
                       currency={currentCurrency}
                       taxRate={taxRate}
+                      loyaltySettings={loyaltySettings}
+                      onApplyLoyaltyDiscount={handleApplyLoyaltyDiscount}
+                      loyaltyDiscountApplied={loyaltyDiscountApplied}
                     />
                   </aside>
                 </main>
@@ -317,8 +445,6 @@ const App: React.FC = () => {
                     onUpdateProduct={handleUpdateProduct}
                     onDeleteProduct={handleDeleteProduct}
                     currency={currentCurrency}
-                    taxRate={taxRate}
-                    onTaxRateChange={setTaxRate}
                 />
             );
         case 'customers':
@@ -328,6 +454,10 @@ const App: React.FC = () => {
                     onAddCustomer={handleAddCustomer}
                     onUpdateCustomer={handleUpdateCustomer}
                     onDeleteCustomer={handleDeleteCustomer}
+                    onViewCustomerProfile={handleViewCustomerProfile}
+                    loyaltySettings={loyaltySettings}
+                    onLoyaltySettingsChange={setLoyaltySettings}
+                    currency={currentCurrency}
                 />
             );
         case 'users':
@@ -338,7 +468,15 @@ const App: React.FC = () => {
                     onUpdateUser={handleUpdateUser}
                     onDeleteUser={handleDeleteUser}
                 />
-            )
+            );
+        case 'fbr':
+            return (
+                <FBRSettings
+                    settings={fbrSettings}
+                    onSettingsChange={setFbrSettings}
+                    apiStatus={fbrApiStatus}
+                />
+            );
         default:
             return null;
     }
@@ -362,12 +500,22 @@ const App: React.FC = () => {
         onConfirmPayment={handleProcessPayment}
         currency={currentCurrency}
       />
-      {completedOrder && (
+      {currentCompletedOrder && (
          <ReceiptModal
             isOpen={isReceiptModalOpen}
             onClose={handleCloseReceipt}
-            order={completedOrder}
+            order={currentCompletedOrder}
          />
+      )}
+      {viewingCustomer && (
+        <CustomerProfileModal
+            isOpen={!!viewingCustomer}
+            onClose={handleCloseCustomerProfile}
+            customer={viewingCustomer}
+            orders={allCompletedOrders.filter(o => o.customer?.id === viewingCustomer.id)}
+            loyaltySettings={loyaltySettings}
+            currency={currentCurrency}
+        />
       )}
     </div>
   );

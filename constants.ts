@@ -33,9 +33,9 @@ export const INITIAL_PRODUCTS: Product[] = [
 export const INITIAL_TAX_RATE = 0.08; // 8% sales tax
 
 export const INITIAL_CUSTOMERS: Customer[] = [
-  { id: 1, name: 'Walk-in Customer', email: '' },
-  { id: 2, name: 'John Doe', email: 'john.d@example.com' },
-  { id: 3, name: 'Jane Smith', email: 'jane.s@example.com' },
+  { id: 1, name: 'Walk-in Customer', email: '', totalSpent: 0, rewardAvailable: false },
+  { id: 2, name: 'John Doe', email: 'john.d@example.com', totalSpent: 15000, rewardAvailable: false },
+  { id: 3, name: 'Jane Smith', email: 'jane.s@example.com', totalSpent: 52000, rewardAvailable: true },
 ];
 
 export const USER_ROLES: UserRole[] = ['Admin', 'Cashier', 'Salesman'];

@@ -10,8 +10,6 @@ interface ProductManagementProps {
   onUpdateProduct: (updatedProduct: Product) => void;
   onDeleteProduct: (productId: number) => void;
   currency: Currency;
-  taxRate: number;
-  onTaxRateChange: (newRate: number) => void;
 }
 
 const ProductManagement: React.FC<ProductManagementProps> = ({
@@ -20,8 +18,6 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
   onUpdateProduct,
   onDeleteProduct,
   currency,
-  taxRate,
-  onTaxRateChange,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -55,40 +51,17 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         onDeleteProduct(productId);
     }
   }
-  
-  const handleTaxInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const percentage = parseFloat(value);
-    if (!isNaN(percentage) && percentage >= 0) {
-        onTaxRateChange(percentage / 100);
-    } else if (value === '') {
-        onTaxRateChange(0);
-    }
-  };
 
   return (
     <main className="p-6" style={{ height: 'calc(100vh - 64px)' }}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Product Management</h1>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
-                 <div>
-                    <label htmlFor="tax-rate-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Default Tax Rate (%)</label>
-                    <input
-                        type="number"
-                        id="tax-rate-input"
-                        value={(taxRate * 100).toFixed(2)}
-                        onChange={handleTaxInputChange}
-                        className="w-full sm:w-32 mt-1 px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="e.g., 8"
-                    />
-                 </div>
-                <button
-                    onClick={handleOpenModalForNew}
-                    className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors duration-200 self-end sm:self-center"
-                >
-                    Add New Product
-                </button>
-            </div>
+            <button
+                onClick={handleOpenModalForNew}
+                className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors duration-200 self-end sm:self-center"
+            >
+                Add New Product
+            </button>
         </div>
 
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">

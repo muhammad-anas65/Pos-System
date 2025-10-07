@@ -1,5 +1,5 @@
-import React from 'react';
-import { CartItem, Customer, HeldOrder, Currency } from '../types';
+import React, { useState } from 'react';
+import { CartItem, Customer, HeldOrder, Currency, LoyaltySettings } from '../types';
 import { TrashIcon, UsersIcon, HandHoldingDollarIcon } from './icons';
 import { formatCurrency } from '../utils/formatters';
 
@@ -8,6 +8,8 @@ interface CartProps {
   onUpdateQuantity: (productId: number, newQuantity: number) => void;
   onClearCart: () => void;
   subtotal: number;
+  discountAmount: number;
+  discount: { type: 'percentage' | 'fixed'; value: number } | null;
   tax: number;
   total: number;
   onCheckout: () => void;
@@ -20,6 +22,11 @@ interface CartProps {
   onDeleteHeldOrder: (orderId: number) => void;
   currency: Currency;
   taxRate: number;
+  onApplyDiscount: (type: 'percentage' | 'fixed', value: number) => void;
+  onRemoveDiscount: () => void;
+  loyaltySettings: LoyaltySettings;
+  onApplyLoyaltyDiscount: () => void;
+  loyaltyDiscountApplied: boolean;
 }
 
 const Cart: React.FC<CartProps> = ({
@@ -27,6 +34,8 @@ const Cart: React.FC<CartProps> = ({
   onUpdateQuantity,
   onClearCart,
   subtotal,
+  discountAmount,
+  discount,
   tax,
   total,
   onCheckout,
@@ -39,12 +48,33 @@ const Cart: React.FC<CartProps> = ({
   onDeleteHeldOrder,
   currency,
   taxRate,
+  onApplyDiscount,
+  onRemoveDiscount,
+  loyaltySettings,
+  onApplyLoyaltyDiscount,
+  loyaltyDiscountApplied,
 }) => {
+  const [discountInput, setDiscountInput] = useState('');
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
+
   const handleCustomerChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const customerId = parseInt(event.target.value, 10);
     const customer = customers.find(c => c.id === customerId) || null;
     onSelectCustomer(customer);
   };
+
+  const handleApplyClick = () => {
+    const value = parseFloat(discountInput);
+    if (!isNaN(value) && value > 0) {
+        onApplyDiscount(discountType, value);
+    }
+  };
+
+  const handleRemoveClick = () => {
+      setDiscountInput('');
+      onRemoveDiscount();
+  };
+
 
   return (
     <div className="h-full flex flex-col">
@@ -73,6 +103,24 @@ const Cart: React.FC<CartProps> = ({
           ))}
         </select>
       </div>
+      
+      {loyaltySettings.enabled && selectedCustomer?.rewardAvailable && (
+          <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-center border border-blue-200 dark:border-blue-700">
+            <p className="font-semibold text-blue-700 dark:text-blue-300">
+              🎉 Loyalty Reward Available!
+            </p>
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              {loyaltySettings.rewardPercentage}% off this order.
+            </p>
+            <button
+              onClick={onApplyLoyaltyDiscount}
+              disabled={discountAmount > 0}
+              className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 text-sm font-semibold"
+            >
+              {loyaltyDiscountApplied ? 'Applied!' : 'Apply Reward'}
+            </button>
+          </div>
+      )}
 
       <div className="flex-grow overflow-y-auto -mr-4 pr-4 border-b dark:border-gray-700 pb-2">
         {cartItems.length === 0 ? (
@@ -121,11 +169,70 @@ const Cart: React.FC<CartProps> = ({
       )}
 
       <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className={`mb-3 transition-opacity ${loyaltyDiscountApplied ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          {discountAmount <= 0 ? (
+            <div className="flex items-center gap-2">
+              <div className="relative flex-grow">
+                <input
+                  type="number"
+                  placeholder="Discount"
+                  value={discountInput}
+                  onChange={(e) => setDiscountInput(e.target.value)}
+                  className="w-full pl-3 pr-16 py-2 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-200 dark:disabled:bg-gray-800"
+                  aria-label="Discount value"
+                  disabled={loyaltyDiscountApplied}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                  <select
+                    value={discountType}
+                    onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'fixed')}
+                    className="h-full rounded-r-lg border-l border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 py-0 pl-2 pr-7 text-gray-500 dark:text-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm disabled:bg-gray-200 dark:disabled:bg-gray-800"
+                    aria-label="Discount type"
+                    disabled={loyaltyDiscountApplied}
+                  >
+                    <option value="percentage">%</option>
+                    <option value="fixed">{currency.symbol}</option>
+                  </select>
+                </div>
+              </div>
+              <button
+                onClick={handleApplyClick}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 text-sm font-semibold"
+                disabled={!discountInput || cartItems.length === 0 || loyaltyDiscountApplied}
+              >
+                Apply
+              </button>
+            </div>
+          ) : (
+            <div className="flex justify-between items-center bg-green-50 dark:bg-green-900/30 p-2 rounded-lg">
+              <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                {loyaltyDiscountApplied ? 'Loyalty ' : ''}Discount Applied
+              </p>
+              <button onClick={handleRemoveClick} className="text-red-500 hover:text-red-700 text-sm font-semibold">
+                Remove
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal, currency)}</span>
           </div>
+          {discountAmount > 0 && discount && (
+            <div className="flex justify-between text-green-600 dark:text-green-400">
+                <span>
+                    {loyaltyDiscountApplied ? 'Loyalty Discount' : 'Discount'}{' '}
+                    <span className="text-xs font-normal">
+                      ({discount.type === 'percentage'
+                        ? `${discount.value}%`
+                        : formatCurrency(discount.value, currency)})
+                    </span>
+                </span>
+                <span>-{formatCurrency(discountAmount, currency)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span>Tax ({ (taxRate * 100).toFixed(0) }%)</span>
             <span>{formatCurrency(tax, currency)}</span>

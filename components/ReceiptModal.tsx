@@ -56,8 +56,14 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, order }) =
                 <span>Subtotal</span>
                 <span>{formatCurrency(order.subtotal, order.currency)}</span>
             </div>
+             {order.discountAmount && order.discountAmount > 0 && (
+                <div className="flex justify-between">
+                    <span>Discount</span>
+                    <span>-{formatCurrency(order.discountAmount, order.currency)}</span>
+                </div>
+            )}
             <div className="flex justify-between">
-                <span>Tax ({ (order.taxRate * 100).toFixed(0) }%)</span>
+                <span>{order.isFbrInvoice ? 'FBR Tax' : 'Tax'} ({ (order.taxRate * 100).toFixed(0) }%)</span>
                 <span>{formatCurrency(order.tax, order.currency)}</span>
             </div>
             <div className="flex justify-between font-bold text-lg border-t pt-2 dark:border-gray-600">
@@ -84,6 +90,13 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, order }) =
                 </>
             )}
            </div>
+
+            {order.isFbrInvoice && order.fbrInvoiceNumber && (
+                <div className="text-center mt-4 pt-2 border-t dark:border-gray-600">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">FBR Invoice Number</p>
+                    <p className="font-mono text-sm">{order.fbrInvoiceNumber}</p>
+                </div>
+            )}
 
         </div>
         <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg flex justify-between space-x-3">

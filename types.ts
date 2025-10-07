@@ -15,6 +15,8 @@ export interface Customer {
   id: number;
   name: string;
   email: string;
+  totalSpent?: number;
+  rewardAvailable?: boolean;
 }
 
 export interface HeldOrder {
@@ -38,8 +40,22 @@ export interface User {
   role: UserRole;
 }
 
+export interface LoyaltySettings {
+  enabled: boolean;
+  spendThreshold: number;
+  rewardPercentage: number;
+}
+
+export interface FbrSettings {
+  enabled: boolean;
+  apiKey: string;
+  ntn: string;
+  posId: string;
+  manualTaxRate: number;
+}
+
 export type Category = 'All' | 'Coffee' | 'Tea' | 'Pastries' | 'Sandwiches';
-export type View = 'sales' | 'products' | 'customers' | 'users';
+export type View = 'sales' | 'products' | 'customers' | 'users' | 'fbr';
 export type PaymentMethod = 'Card' | 'Cash';
 export type UserRole = 'Admin' | 'Cashier' | 'Salesman';
 
@@ -47,6 +63,7 @@ export interface CompletedOrder {
   cartItems: CartItem[];
   customer: Customer | null;
   subtotal: number;
+  discountAmount?: number;
   tax: number;
   total: number;
   paymentMethod: PaymentMethod;
@@ -55,4 +72,6 @@ export interface CompletedOrder {
   date: Date;
   currency: Currency;
   taxRate: number;
+  isFbrInvoice: boolean;
+  fbrInvoiceNumber?: string;
 }
