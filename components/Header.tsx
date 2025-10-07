@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogoIcon, ShoppingCartIcon, BoxIcon, UsersIcon, Cog8ToothIcon, ArrowRightOnRectangleIcon, DocumentTextIcon, BrainIcon } from './icons';
+import { LogoIcon, ShoppingCartIcon, BoxIcon, UsersIcon, Cog8ToothIcon, ArrowRightOnRectangleIcon, DocumentTextIcon, BrainIcon, ChartBarIcon } from './icons';
 import { View, Currency, User } from '../types';
 import { CURRENCIES } from '../constants';
 
@@ -35,6 +35,17 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, currentView, onCurrencyChan
             </select>
         </div>
         <div className="border-l border-gray-200 dark:border-gray-600 h-8 mx-2"></div>
+
+        {currentUser.role === 'Admin' && (
+          <button 
+                onClick={() => onNavigate('dashboard')}
+                className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${currentView === 'dashboard' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                aria-label="Admin Dashboard"
+            >
+                <ChartBarIcon className="h-6 w-6 text-gray-600 dark:text-gray-300"/>
+            </button>
+        )}
+
          <button 
             onClick={() => onNavigate('sales')}
             className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${currentView === 'sales' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}

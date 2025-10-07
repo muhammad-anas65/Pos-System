@@ -13,6 +13,7 @@ import Login from './components/Login';
 import CustomerProfileModal from './components/CustomerProfileModal';
 import FBRSettings from './components/FBRSettings';
 import AIInsights from './components/AIInsights';
+import Dashboard from './components/Dashboard';
 import { sendInvoiceToFBR } from './utils/fbrApi';
 
 const App: React.FC = () => {
@@ -84,7 +85,7 @@ const App: React.FC = () => {
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
     if (user) {
         setCurrentUser(user);
-        setCurrentView('sales'); // Default to sales view on login
+        setCurrentView(user.role === 'Admin' ? 'dashboard' : 'sales'); // Default to dashboard for admin, sales for others
         return true;
     }
     return false;
@@ -96,7 +97,8 @@ const App: React.FC = () => {
 
   const navigate = (view: View) => {
     // Role-based access control
-    if (currentUser?.role !== 'Admin' && (view === 'products' || view === 'customers' || view === 'users' || view === 'fbr' || view === 'ai')) {
+    const adminViews: View[] = ['products', 'customers', 'users', 'fbr', 'ai', 'dashboard'];
+    if (currentUser?.role !== 'Admin' && adminViews.includes(view)) {
       return; // Block navigation for non-admins
     }
     setCurrentView(view);
@@ -404,6 +406,14 @@ const App: React.FC = () => {
 
   const mainContent = () => {
     switch(currentView) {
+        case 'dashboard':
+            return (
+                <Dashboard
+                    completedOrders={allCompletedOrders}
+                    products={products}
+                    currency={currentCurrency}
+                />
+            );
         case 'sales':
             return (
                 <main className="flex" style={{ height: 'calc(100vh - 64px)' }}>

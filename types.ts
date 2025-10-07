@@ -59,7 +59,7 @@ export interface AISettings {
 }
 
 export type Category = 'All' | 'Coffee' | 'Tea' | 'Pastries' | 'Sandwiches';
-export type View = 'sales' | 'products' | 'customers' | 'users' | 'fbr' | 'ai';
+export type View = 'sales' | 'products' | 'customers' | 'users' | 'fbr' | 'ai' | 'dashboard';
 export type PaymentMethod = 'Card' | 'Cash';
 export type UserRole = 'Admin' | 'Cashier' | 'Salesman';
 
