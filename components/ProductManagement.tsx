@@ -1,26 +1,33 @@
 import React, { useState } from 'react';
-import { Product, Currency } from '../types';
+import { Product, Currency, Category } from '../types';
 import ProductFormModal from './ProductFormModal';
 import { PencilIcon, TrashIcon } from './icons';
 import { formatCurrency } from '../utils/formatters';
 
 interface ProductManagementProps {
   products: Product[];
+  categories: Category[];
   onAddProduct: (newProduct: Omit<Product, 'id'>) => void;
   onUpdateProduct: (updatedProduct: Product) => void;
   onDeleteProduct: (productId: number) => void;
+  onAddCategory: (newCategory: string) => void;
+  onDeleteCategory: (category: string) => void;
   currency: Currency;
 }
 
 const ProductManagement: React.FC<ProductManagementProps> = ({
   products,
+  categories,
   onAddProduct,
   onUpdateProduct,
   onDeleteProduct,
+  onAddCategory,
+  onDeleteCategory,
   currency,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const handleOpenModalForNew = () => {
     setEditingProduct(null);
@@ -52,16 +59,51 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
     }
   }
 
+  const handleAddCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newCategoryName.trim()) {
+        onAddCategory(newCategoryName.trim());
+        setNewCategoryName('');
+    }
+  };
+
   return (
-    <main className="p-6" style={{ height: 'calc(100vh - 64px)' }}>
+    <main className="p-6" style={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Product Management</h1>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Product & Category Management</h1>
             <button
                 onClick={handleOpenModalForNew}
                 className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors duration-200 self-end sm:self-center"
             >
                 Add New Product
             </button>
+        </div>
+
+        {/* Category Management Section */}
+        <div className="mb-6 p-4 border rounded-lg dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Category Management</h2>
+            <form onSubmit={handleAddCategorySubmit} className="flex items-center gap-2 mb-4">
+                <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="New category name"
+                    className="flex-grow px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold">
+                    Add Category
+                </button>
+            </form>
+            <div className="flex flex-wrap gap-2">
+                {categories.filter(c => c !== 'All').map(cat => (
+                    <div key={cat} className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1 text-sm">
+                        <span>{cat}</span>
+                        <button onClick={() => onDeleteCategory(cat)} className="text-red-500 hover:text-red-700">
+                            <TrashIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                ))}
+            </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
@@ -109,6 +151,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
             onClose={handleCloseModal}
             onSave={handleSaveProduct}
             product={editingProduct}
+            categories={categories}
         />
     </main>
   );

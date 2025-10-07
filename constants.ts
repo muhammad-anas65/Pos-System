@@ -1,6 +1,6 @@
 import { Product, Category, Customer, Currency, User, UserRole } from './types';
 
-export const CATEGORIES: Category[] = ['All', 'Coffee', 'Tea', 'Pastries', 'Sandwiches'];
+export const INITIAL_CATEGORIES: Category[] = ['All', 'Coffee', 'Tea', 'Pastries', 'Sandwiches'];
 
 export const CURRENCIES: Currency[] = [
     { code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs' },

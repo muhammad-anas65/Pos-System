@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Product, CartItem, Category, View, Customer, HeldOrder, PaymentMethod, CompletedOrder, Currency, User, LoyaltySettings, FbrSettings } from './types';
-import { INITIAL_PRODUCTS, CATEGORIES, INITIAL_TAX_RATE, INITIAL_CUSTOMERS, DEFAULT_CURRENCY, CURRENCIES, INITIAL_USERS } from './constants';
+import { INITIAL_PRODUCTS, INITIAL_CATEGORIES, INITIAL_TAX_RATE, INITIAL_CUSTOMERS, DEFAULT_CURRENCY, CURRENCIES, INITIAL_USERS } from './constants';
 import Header from './components/Header';
 import ProductGrid from './components/ProductGrid';
 import Cart from './components/Cart';
@@ -22,6 +22,7 @@ const App: React.FC = () => {
   // App State
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [activeCategory, setActiveCategory] = useState<Category>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -367,6 +368,30 @@ const App: React.FC = () => {
     setViewingCustomer(null);
   };
 
+  // Category Management Handlers
+  const handleAddCategory = (newCategory: string) => {
+    if (newCategory && !categories.find(c => c.toLowerCase() === newCategory.toLowerCase())) {
+        // FIX: The newCategory is a string, but the state expects a Category type.
+        // We cast it to satisfy TypeScript, acknowledging that the app logic allows any string as a new category.
+        setCategories(prev => [...prev, newCategory as Category]);
+    }
+  };
+
+  const handleDeleteCategory = (categoryToDelete: string) => {
+    // FIX: The `includes` method on a `Category[]` array expects a `Category` type.
+    // We cast categoryToDelete (string) to Category to perform the check correctly.
+    if (categoryToDelete === 'All' || INITIAL_CATEGORIES.slice(1).includes(categoryToDelete as Category)) {
+        alert('Cannot delete default categories.');
+        return;
+    }
+    const isCategoryInUse = products.some(p => p.category === categoryToDelete);
+    if (isCategoryInUse) {
+        alert(`Cannot delete category "${categoryToDelete}" as it is currently in use by one or more products.`);
+        return;
+    }
+    setCategories(prev => prev.filter(c => c !== categoryToDelete));
+  };
+
 
   // --- Render Logic ---
 
@@ -391,12 +416,12 @@ const App: React.FC = () => {
                        />
                     </div>
                     <div className="mb-6">
-                      <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700">
-                        {CATEGORIES.map((category) => (
+                      <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700 overflow-x-auto pb-2">
+                        {categories.map((category) => (
                           <button
                             key={category}
                             onClick={() => setActiveCategory(category)}
-                            className={`px-4 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none ${
+                            className={`px-4 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none whitespace-nowrap ${
                               activeCategory === category
                                 ? 'border-b-2 border-primary text-primary'
                                 : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white'
@@ -443,9 +468,12 @@ const App: React.FC = () => {
             return (
                 <ProductManagement 
                     products={products}
+                    categories={categories}
                     onAddProduct={handleAddProduct}
                     onUpdateProduct={handleUpdateProduct}
                     onDeleteProduct={handleDeleteProduct}
+                    onAddCategory={handleAddCategory}
+                    onDeleteCategory={handleDeleteCategory}
                     currency={currentCurrency}
                 />
             );
