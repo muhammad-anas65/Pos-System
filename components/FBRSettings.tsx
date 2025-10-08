@@ -47,7 +47,7 @@ const FBRSettings: React.FC<FBRSettingsProps> = ({ settings, onSettingsChange, a
 
 
     return (
-        <main className="p-6" style={{ height: 'calc(100vh - 64px)' }}>
+        <main className="p-4 sm:p-6" style={{ height: 'calc(100vh - 64px)' }}>
             <div className="max-w-4xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white">FBR Tax Integration</h1>

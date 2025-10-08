@@ -83,7 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({ completedOrders, products, curren
     const PIE_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
 
     return (
-        <main className="p-6 bg-gray-50 dark:bg-gray-900/50" style={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
+        <main className="p-4 sm:p-6 bg-gray-50 dark:bg-gray-900/50" style={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div>

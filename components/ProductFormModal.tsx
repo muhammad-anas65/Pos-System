@@ -7,9 +7,10 @@ interface ProductFormModalProps {
   onSave: (productData: Omit<Product, 'id'> | Product) => void;
   product: Product | null;
   categories: Category[];
+  isSaving: boolean;
 }
 
-const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, onSave, product, categories }) => {
+const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, onSave, product, categories, isSaving }) => {
   const [formData, setFormData] = useState({
     name: '',
     category: categories.find(c => c !== 'All') || '',
@@ -129,6 +130,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
                         <input type="file" onChange={handleImageUpload} accept="image/*" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-r-md file:border-0 file:text-sm file:font-semibold file:bg-primary-light file:text-primary dark:file:bg-primary-dark/20 dark:file:text-primary-light hover:file:bg-primary/20 dark:hover:file:bg-primary-dark/40" />
                     )}
                 </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Provide an image URL or upload a file. If left blank, an AI-generated image will be created on save.
+                </p>
                 {formData.imageUrl && (
                     <div className="mt-4">
                         <img src={formData.imageUrl} alt="Product Preview" className="h-24 w-24 rounded-md object-cover bg-gray-100 dark:bg-gray-700" />
@@ -139,7 +143,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, on
           </div>
           <div className="p-6 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg flex justify-end space-x-3 mt-auto">
             <button type="button" onClick={onClose} className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
-            <button type="submit" className="px-6 py-2 rounded-lg bg-primary text-white font-bold hover:bg-primary-dark">Save Product</button>
+            <button
+                type="submit"
+                className="px-6 py-2 rounded-lg bg-primary text-white font-bold hover:bg-primary-dark disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-wait"
+                disabled={isSaving}
+            >
+                {isSaving ? 'Saving...' : 'Save Product'}
+            </button>
           </div>
         </form>
       </div>

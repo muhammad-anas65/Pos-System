@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlBPU2lmeSBQb2ludCBvZiBTYWxlIiwKICAic2hvcnRfbmFtZSI6ICJQT1NpZnkiLAogICJkZXNjcmlwdGlvbiI6ICJBIGZ1bGwtZmVhdHVyZWQgUG9pbnQgb2YgU2FsZSAoUE9TKSBTeXN0ZW0gV2ViIEFwcGxpY2F0aW9uLiIsCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjNmNGY2IiwKICAidGhlbWVfY29sb3IiOiAiIzRmNDZlNSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vcGljc3VtLnBob3Rvcy9pZC8xLzE5Mi8xOTIiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAgICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiaHR0cHM6Ly9waWNzdW0ucGhvdG9zL2lkLzEvNTEyLzUxMiIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIgogICAgfQogIF0KfQ==">
+    <meta name="theme-color" content="#4f46e5">
+
     <title>React POS System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.3/zephyr/bootstrap.min.css" integrity="sha512-58TqvsxaKDF2fr3u2T9Y82ZiLGG1zqmKll6sH2E2SCJPAc/3MQp3PMR0VfsiiIe93aLfjwzNH2/sLtn1y+p9RA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -22,5 +27,89 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        const swCode = `
+const CACHE_NAME = 'posify-cache-v1';
+const urlsToCache = [
+  '/',
+  '/index.tsx',
+  'https://cdn.tailwindcss.com',
+  'https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.3/zephyr/bootstrap.min.css',
+  'https://aistudiocdn.com/react@^19.2.0',
+  'https://aistudiocdn.com/react-dom@^19.2.0/client.js',
+  'https://aistudiocdn.com/react@^19.2.0/jsx-runtime.js',
+  'https://aistudiocdn.com/@google/genai@^1.22.0',
+  'https://aistudiocdn.com/recharts@^2.12.7'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Opened cache');
+        const cachePromises = urlsToCache.map(url => {
+          const request = new Request(url, { mode: 'no-cors' });
+          return fetch(request).then(response => cache.put(request, response))
+            .catch(err => console.warn('Failed to cache:', url, err));
+        });
+        return Promise.all(cachePromises);
+      })
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response; // Return from cache
+        }
+        // Not in cache, fetch from network
+        return fetch(event.request).then(
+          response => {
+            // Check if we received a valid response
+            if (!response || (response.status !== 200 && response.type !== 'opaque')) {
+              return response;
+            }
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
+            return response;
+          }
+        ).catch(err => {
+          // Network request failed, which is expected when offline.
+          // In a real app you might return a custom offline page here.
+        });
+      })
+  );
+});
+
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+        `;
+        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl)
+          .then(registration => console.log('Service Worker registered with scope:', registration.scope))
+          .catch(error => console.error('Service Worker registration failed:', error));
+      }
+    </script>
   </body>
 </html>

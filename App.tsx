@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import { Product, CartItem, Category, View, Customer, HeldOrder, PaymentMethod, CompletedOrder, Currency, User, LoyaltySettings, FbrSettings, AISettings } from './types';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES, INITIAL_TAX_RATE, INITIAL_CUSTOMERS, DEFAULT_CURRENCY, CURRENCIES, INITIAL_USERS } from './constants';
 import Header from './components/Header';
@@ -300,10 +301,42 @@ const App: React.FC = () => {
     setHeldOrders(prev => prev.filter(o => o.id !== orderId));
   };
 
-  const handleAddProduct = (newProduct: Omit<Product, 'id'>) => {
+  const handleAddProduct = async (newProductData: Omit<Product, 'id'>) => {
+    let finalProductData = { ...newProductData };
+
+    if (!finalProductData.imageUrl) {
+        console.log('No image provided, attempting to generate one with AI...');
+        if (!process.env.API_KEY) {
+            console.warn("Gemini API key not found. Please set the API_KEY environment variable. Using a placeholder image.");
+            finalProductData.imageUrl = 'https://picsum.photos/200';
+        } else {
+            try {
+                const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+                const prompt = `A professional, clean product photograph of ${finalProductData.name}, a type of ${finalProductData.category}, on a simple, white background. Centered, menu-style photo.`;
+                
+                const response = await ai.models.generateImages({
+                    model: 'imagen-4.0-generate-001',
+                    prompt: prompt,
+                    config: {
+                      numberOfImages: 1,
+                      outputMimeType: 'image/jpeg',
+                      aspectRatio: '1:1',
+                    },
+                });
+
+                const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
+                finalProductData.imageUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
+                console.log('Successfully generated product image.');
+            } catch (error) {
+                console.error("AI Image generation failed:", error);
+                finalProductData.imageUrl = 'https://picsum.photos/200'; // Fallback image
+            }
+        }
+    }
+
     setProducts(prevProducts => {
         const newId = prevProducts.length > 0 ? Math.max(...prevProducts.map(p => p.id)) + 1 : 1;
-        return [...prevProducts, { ...newProduct, id: newId }];
+        return [...prevProducts, { ...finalProductData, id: newId }];
     });
   };
 
@@ -416,8 +449,8 @@ const App: React.FC = () => {
             );
         case 'sales':
             return (
-                <main className="flex" style={{ height: 'calc(100vh - 64px)' }}>
-                  <div className="flex-1 p-6 overflow-y-auto">
+                <main className="flex flex-col lg:flex-row" style={{ height: 'calc(100vh - 64px)' }}>
+                  <div className="flex-1 p-4 md:p-6 overflow-y-auto">
                     <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
                        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Sales Register</h1>
                        <input
@@ -448,7 +481,7 @@ const App: React.FC = () => {
                     <ProductGrid products={filteredProducts} onAddToCart={addToCart} currency={currentCurrency} />
                   </div>
         
-                  <aside className="w-96 bg-white dark:bg-gray-800 shadow-lg p-6 flex flex-col">
+                  <aside className="w-full lg:w-96 lg:flex-shrink-0 bg-white dark:bg-gray-800 shadow-lg p-4 md:p-6 flex flex-col border-t-2 lg:border-t-0 lg:border-l-2 border-gray-200 dark:border-gray-700 overflow-y-auto">
                     <Cart
                       cartItems={cart}
                       onUpdateQuantity={updateQuantity}
@@ -464,6 +497,7 @@ const App: React.FC = () => {
                       customers={customers}
                       selectedCustomer={selectedCustomer}
                       onSelectCustomer={setSelectedCustomer}
+      
                       heldOrders={heldOrders}
                       onHoldOrder={handleHoldOrder}
                       onRecallOrder={handleRecallOrder}

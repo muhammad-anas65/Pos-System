@@ -50,7 +50,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
   }
 
   return (
-    <main className="p-6" style={{ height: 'calc(100vh - 64px)' }}>
+    <main className="p-4 sm:p-6" style={{ height: 'calc(100vh - 64px)' }}>
         <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">User Management</h1>
             <button
@@ -62,7 +62,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
         </div>
 
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <table className="w-full min-w-[600px] text-sm text-left text-gray-500 dark:text-gray-400">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                     <tr>
                         <th scope="col" className="px-6 py-3">User Name</th>

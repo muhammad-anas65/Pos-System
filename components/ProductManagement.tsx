@@ -7,7 +7,7 @@ import { formatCurrency } from '../utils/formatters';
 interface ProductManagementProps {
   products: Product[];
   categories: Category[];
-  onAddProduct: (newProduct: Omit<Product, 'id'>) => void;
+  onAddProduct: (newProduct: Omit<Product, 'id'>) => Promise<void>;
   onUpdateProduct: (updatedProduct: Product) => void;
   onDeleteProduct: (productId: number) => void;
   onAddCategory: (newCategory: string) => void;
@@ -28,6 +28,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleOpenModalForNew = () => {
     setEditingProduct(null);
@@ -44,13 +45,21 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
     setEditingProduct(null);
   };
 
-  const handleSaveProduct = (productData: Omit<Product, 'id'> | Product) => {
-    if ('id' in productData) {
-      onUpdateProduct(productData);
-    } else {
-      onAddProduct(productData);
+  const handleSaveProduct = async (productData: Omit<Product, 'id'> | Product) => {
+    setIsSaving(true);
+    try {
+        if ('id' in productData) {
+            onUpdateProduct(productData);
+        } else {
+            await onAddProduct(productData);
+        }
+    } catch (error) {
+        console.error("Failed to save product:", error);
+        alert("There was an error saving the product. Please check the console for details.");
+    } finally {
+        setIsSaving(false);
+        handleCloseModal();
     }
-    handleCloseModal();
   };
   
   const handleDelete = (productId: number) => {
@@ -68,7 +77,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
   };
 
   return (
-    <main className="p-6" style={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
+    <main className="p-4 sm:p-6" style={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Product & Category Management</h1>
             <button
@@ -107,7 +116,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         </div>
 
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <table className="w-full min-w-[640px] text-sm text-left text-gray-500 dark:text-gray-400">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                     <tr>
                         <th scope="col" className="px-6 py-3">Image</th>
@@ -152,6 +161,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
             onSave={handleSaveProduct}
             product={editingProduct}
             categories={categories}
+            isSaving={isSaving}
         />
     </main>
   );

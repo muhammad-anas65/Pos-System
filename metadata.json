@@ -1,5 +1,5 @@
 {
   "name": "POS System",
-  "description": "A full-featured Point of Sale (POS) System Web Application with a modern design and clean UI, built with React, TypeScript, and Tailwind CSS. This MVP focuses on the core sales register functionality.",
+  "description": "An installable, offline-first Point of Sale (POS) System Web Application (PWA) with a modern design and clean UI, built with React, TypeScript, and Tailwind CSS. This MVP focuses on the core sales register functionality.",
   "requestFramePermissions": []
 }

@@ -89,7 +89,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({ settings, onSettingsChange, com
     };
 
     return (
-        <main className="p-6" style={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
+        <main className="p-4 sm:p-6" style={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
             <div className="max-w-4xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
